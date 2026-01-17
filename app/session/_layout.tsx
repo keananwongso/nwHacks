@@ -1,7 +1,10 @@
 // Session flow as modal stack
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SessionLayout() {
+  const router = useRouter();
   return (
     <Stack
       screenOptions={{
@@ -14,7 +17,14 @@ export default function SessionLayout() {
     >
       <Stack.Screen
         name="setup"
-        options={{ title: 'Start a Lock-In' }}
+        options={{
+          title: 'Start a Lock-In',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+          ),
+        }}
       />
       <Stack.Screen
         name="active"

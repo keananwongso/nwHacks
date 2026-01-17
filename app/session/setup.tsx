@@ -6,10 +6,11 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSessionStore } from '../../src/stores/sessionStore';
 import { useAuth } from '../../src/hooks/useAuth';
 import {
@@ -23,8 +24,10 @@ import { TagSelector } from '../../src/components/session/TagSelector';
 
 export default function SetupScreen() {
   const router = useRouter();
+  const { initialProofUri } = useLocalSearchParams<{ initialProofUri: string }>();
   const { profile } = useAuth();
   const startSession = useSessionStore((state) => state.startSession);
+  const submitBeforeProof = useSessionStore((state) => state.submitBeforeProof);
 
   const [duration, setDuration] = useState(DURATION_PRESETS[0]);
   const [tag, setTag] = useState<SessionTag>('Study');
@@ -43,7 +46,13 @@ export default function SetupScreen() {
         profile.username,
         profile.avatarUrl
       );
-      router.replace('/session/proof?type=before');
+
+      if (initialProofUri) {
+        await submitBeforeProof(initialProofUri);
+        router.replace('/session/active');
+      } else {
+        router.replace('/session/proof?type=before');
+      }
     } catch (error) {
       console.error('Failed to start session:', error);
       setStarting(false);
@@ -53,6 +62,14 @@ export default function SetupScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* Proof Preview if available */}
+        {initialProofUri && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📸 Ready to lock in!</Text>
+            <Image source={{ uri: initialProofUri }} style={styles.previewImage} />
+          </View>
+        )}
+
         {/* Duration Picker */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>How long are you locking in?</Text>
@@ -155,5 +172,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  previewImage: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+    borderRadius: 16,
+    marginBottom: 8,
+    backgroundColor: '#000',
   },
 });
