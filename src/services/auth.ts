@@ -1,6 +1,6 @@
-// Authentication service - using anonymous auth for Expo Go compatibility
 import {
-  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
@@ -8,8 +8,31 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { Profile } from '../types';
 
-export async function signIn(): Promise<User> {
-  const result = await signInAnonymously(auth);
+const USERNAME_DOMAIN = 'users.projectlocked.com';
+
+const usernameToEmail = (username: string) =>
+  `${username.toLowerCase().trim()}@${USERNAME_DOMAIN}`;
+
+export async function signIn(username: string, password: string): Promise<User> {
+  const usernameLower = username.toLowerCase().trim();
+  const docRef = doc(db, 'usernames', usernameLower);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    throw new Error('Username not found');
+  }
+
+  const { email } = docSnap.data();
+  if (!email) {
+    throw new Error('Email not found for this username');
+  }
+
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  return result.user;
+}
+
+export async function signUp(email: string, password: string): Promise<User> {
+  const result = await createUserWithEmailAndPassword(auth, email, password);
   return result.user;
 }
 
@@ -38,7 +61,8 @@ export async function createProfile(
   uid: string,
   username: string,
   fullName: string,
-  avatarUrl: string | null = null
+  avatarUrl: string | null = null,
+  email: string | null = null
 ): Promise<Profile> {
   const usernameLower = username.toLowerCase();
 
@@ -48,8 +72,8 @@ export async function createProfile(
     throw new Error('Username is already taken');
   }
 
-  // Reserve username atomically
-  await setDoc(doc(db, 'usernames', usernameLower), { uid });
+  // Reserve username atomically and store email for login lookup
+  await setDoc(doc(db, 'usernames', usernameLower), { uid, email });
 
   // Create profile
   const profile = {
