@@ -1,56 +1,19 @@
-// Authentication service with Google Sign-In
+// Authentication service - using anonymous auth for Expo Go compatibility
 import {
-  signInWithCredential,
+  signInAnonymously,
   signOut as firebaseSignOut,
-  GoogleAuthProvider,
   User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth, db } from './firebase';
 import { Profile } from '../types';
 
-// Configure Google Sign-In - call this once on app startup
-export function configureGoogleSignIn(webClientId: string) {
-  GoogleSignin.configure({
-    webClientId,
-    offlineAccess: true,
-  });
-}
-
-export async function signInWithGoogle(): Promise<User> {
-  try {
-    // Check if device supports Google Play
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
-    // Get the user's ID token
-    const signInResult = await GoogleSignin.signIn();
-
-    // Get the ID token from the result
-    const idToken = signInResult.data?.idToken;
-    if (!idToken) {
-      throw new Error('No ID token found');
-    }
-
-    // Create a Google credential with the token
-    const googleCredential = GoogleAuthProvider.credential(idToken);
-
-    // Sign-in the user with the credential
-    const userCredential = await signInWithCredential(auth, googleCredential);
-    return userCredential.user;
-  } catch (error: any) {
-    console.error('Google sign-in error:', error);
-    throw error;
-  }
+export async function signIn(): Promise<User> {
+  const result = await signInAnonymously(auth);
+  return result.user;
 }
 
 export async function signOut(): Promise<void> {
-  try {
-    await GoogleSignin.signOut();
-  } catch (error) {
-    // Google sign out may fail if not signed in via Google
-    console.log('Google sign out skipped:', error);
-  }
   await firebaseSignOut(auth);
 }
 
