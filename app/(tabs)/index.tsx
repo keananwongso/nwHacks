@@ -1,11 +1,10 @@
 // Home screen - Lock In button, today status, stats
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useStats } from '../../src/hooks/useStats';
 import { StatsCard } from '../../src/components/home/StatsCard';
-import { StreakDisplay } from '../../src/components/home/StreakDisplay';
 import { TodayStatus } from '../../src/components/home/TodayStatus';
 import { DEMO_MODE } from '../../src/utils/constants';
 
@@ -23,26 +22,48 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.name}>{profile?.fullName || 'User'}</Text>
-          </View>
-          {DEMO_MODE && (
-            <View style={styles.demoBadge}>
-              <Text style={styles.demoText}>DEMO</Text>
+          <View style={styles.headerLeftContainer}>
+            <TouchableOpacity
+              onPress={() => router.push('/settings')}
+              style={styles.avatarButton}
+            >
+              {profile?.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.placeholderAvatar]}>
+                  <Text style={styles.avatarInitial}>
+                    {(profile?.fullName || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.headerLeft}>
+              <Text style={styles.greeting}>Welcome back,</Text>
+              <Text style={styles.name}>{profile?.fullName || 'User'}</Text>
             </View>
-          )}
+          </View>
+
+          <View style={styles.streakBox}>
+            <Text style={styles.streakIcon}>🔥</Text>
+            <Text style={styles.streakNumber}>{stats?.currentStreak || 0}</Text>
+            <Text style={styles.streakLabel}>days</Text>
+          </View>
         </View>
 
-        {/* Streak Display */}
-        <StreakDisplay
-          currentStreak={stats?.currentStreak || 0}
-          longestStreak={stats?.longestStreak || 0}
-        />
-
         {/* Lock In Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={handleLockIn}
+          style={styles.lockInButton}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.lockInEmoji}>🔒</Text>
+          <Text style={styles.lockInText}>Lock In</Text>
+          <Text style={styles.lockInSubtext}>Start a focused session</Text>
+        </TouchableOpacity> */}
+
+        {/* Statistics */}
+        <TouchableOpacity
           style={styles.lockInButton}
           activeOpacity={0.8}
         >
@@ -92,7 +113,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
+  },
+  headerLeftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarButton: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  placeholderAvatar: {
+    backgroundColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  avatarInitial: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
     color: '#9CA3AF',
@@ -103,16 +152,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
-  demoBadge: {
-    backgroundColor: '#CA8A04',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  streakBox: {
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#374151',
+    flexDirection: 'row',
   },
-  demoText: {
+  streakNumber: {
     color: 'white',
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 12,
+    marginRight: 8,
+  },
+  streakIcon: {
+    fontSize: 18,
+    marginRight: 5,
+  },
+  streakLabel: {
+    color: '#9CA3AF',
+    fontSize: 15,
+    fontWeight: '500',
   },
   lockInButton: {
     backgroundColor: '#6366F1',
