@@ -82,6 +82,7 @@ export async function createProfile(
     fullName,
     avatarUrl,
     label: 'New Member',
+    socialCreditScore: 0, // Initialize social credit score
     createdAt: serverTimestamp(),
   };
 

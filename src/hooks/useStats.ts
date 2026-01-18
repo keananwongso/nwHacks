@@ -51,6 +51,7 @@ export function useStats() {
         minutesThisWeek,
         sessionsToday: today.filter((s) => s.status === 'completed').length,
         hourlyBuckets,
+        socialCreditScore: 0, // Will be updated from profile
       } as any);
     } catch (error) {
       console.error('Failed to load stats:', error);

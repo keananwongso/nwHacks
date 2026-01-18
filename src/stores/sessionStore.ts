@@ -49,6 +49,10 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
       reactionCount: 0,
       witnessId: witnessId || null,
       witnessResponse: null,
+      // Initialize social credit fields
+      tickCount: 0,
+      crossCount: 0,
+      socialCreditDelta: 0,
     });
 
     set({

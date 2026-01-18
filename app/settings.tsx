@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/hooks/useAuth';
+import { SocialCreditBadge } from '../src/components/ui/SocialCreditBadge';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {
@@ -47,8 +48,16 @@ export default function SettingsScreen() {
                     </View>
                     <Text style={styles.name}>{profile?.fullName || 'User'}</Text>
                     <Text style={styles.username}>@{profile?.username || 'username'}</Text>
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{profile?.label || 'New Member'}</Text>
+                    <View style={styles.badgesContainer}>
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{profile?.label || 'New Member'}</Text>
+                        </View>
+                        {profile && (
+                            <SocialCreditBadge 
+                                score={profile.socialCreditScore || 0} 
+                                size="medium"
+                            />
+                        )}
                     </View>
                 </View>
 
@@ -143,6 +152,11 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
         fontSize: 16,
         marginBottom: 12,
+    },
+    badgesContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
     },
     badge: {
         backgroundColor: '#6366F120',

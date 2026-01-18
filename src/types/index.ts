@@ -13,6 +13,7 @@ export interface Profile {
   avatarUrl: string | null;
   label: string;
   createdAt: Timestamp;
+  socialCreditScore: number; // Social credit score from friend votes
 }
 
 // Username reservation at usernames/{usernameLower}
@@ -50,6 +51,10 @@ export interface Session {
   challengeProofUrl?: string | null;
   aiConfidence?: number;
   aiFeedback?: string;
+  // Social credit fields
+  tickCount: number;
+  crossCount: number;
+  socialCreditDelta: number; // Net score contribution (tickCount - crossCount)
 }
 
 // Reaction at sessions/{sessionId}/reactions/{uid}
@@ -67,6 +72,7 @@ export interface UserStats {
   minutesThisWeek: number;
   sessionsToday: number;
   hourlyBuckets: number[];
+  socialCreditScore: number;
 }
 
 // Active session state (Zustand store)

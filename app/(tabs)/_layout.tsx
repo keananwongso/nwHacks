@@ -87,6 +87,13 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
+      {/* Hide leaderboard from tabs - integrated into friends screen */}
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
     </Tabs >
   );
 }
