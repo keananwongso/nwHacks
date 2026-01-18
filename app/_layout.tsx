@@ -20,8 +20,9 @@ export default function RootLayout() {
       // Not signed in, redirect to login
       router.replace('/(auth)/login');
     } else if (user && !profile && (segments as string[])[1] !== 'username-setup') {
-      // Signed in but no profile, go to username setup
-      router.replace('/(auth)/username-setup');
+      // Signed in but no profile, go to login first (as requested)
+      // The user can then proceed to setup from there or be prompted
+      router.replace('/(auth)/login');
     } else if (user && profile && inAuthGroup) {
       // Fully set up, go to main app
       router.replace('/(tabs)');

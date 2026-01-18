@@ -43,7 +43,7 @@ export async function getFriendsSessions(
   let q = query(
     collection(db, 'sessions'),
     where('userId', 'in', batchedIds),
-    where('status', 'in', ['completed', 'abandoned']),
+    where('status', 'in', ['active', 'completed', 'abandoned']),
     orderBy('startedAt', 'desc'),
     limit(limitCount)
   );

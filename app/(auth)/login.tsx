@@ -2,12 +2,24 @@
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { DEMO_MODE } from '../../src/utils/constants';
 
 export default function LoginScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, profile } = useAuth();
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
+
+  useEffect(() => {
+    if (user && !profile) {
+      // If we land here but are authenticated without a profile, 
+      // it means we need to continue setup.
+      // We could show a button, but auto-redirect is common UX here.
+      router.replace('/(auth)/username-setup');
+    }
+  }, [user, profile, router]);
+
   const [identifier, setIdentifier] = useState(''); // Either email or username
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

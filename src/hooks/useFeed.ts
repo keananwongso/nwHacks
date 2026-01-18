@@ -4,6 +4,7 @@ import { DocumentSnapshot } from 'firebase/firestore';
 import { getFriendIds } from '../services/friends';
 import { getFriendsSessions } from '../services/sessions';
 import { Session } from '../types';
+import { auth } from '../services/firebase';
 
 export function useFeed() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -16,6 +17,10 @@ export function useFeed() {
     setLoading(true);
     try {
       const ids = await getFriendIds();
+      // Include current user in the feed
+      if (auth.currentUser) {
+        ids.push(auth.currentUser.uid);
+      }
       setFriendIds(ids);
 
       if (ids.length === 0) {

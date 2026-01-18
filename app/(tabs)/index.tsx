@@ -10,60 +10,61 @@ import { SessionCard } from '../../src/components/feed/SessionCard';
 import { DEMO_MODE } from '../../src/utils/constants';
 import { Session } from '../../src/types';
 
-const MOCK_SESSIONS: Session[] = [
-  {
-    id: 'mock1',
-    userId: 'u1',
-    username: 'Keanan',
-    avatarUrl: 'https://i.pravatar.cc/150?u=keanan',
-    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 45)),
-    endedAt: null,
-    durationMin: 90,
-    tag: 'Build',
-    note: 'Grinding on the new mobile app features! 🚀',
-    status: 'active',
-    beforeProofUrl: 'https://ikblc.ubc.ca/files/2016/07/ubc-irving-k-barber-learning-centre_23048531806_o-min.jpg',
-    afterProofUrl: null,
-    reactionCount: 5,
-  },
-  {
-    id: 'mock2',
-    userId: 'u2',
-    username: 'Alex',
-    avatarUrl: 'https://i.pravatar.cc/150?u=alex',
-    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 120)),
-    endedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 60)),
-    durationMin: 60,
-    tag: 'Study',
-    note: 'Studying chem rn',
-    status: 'completed',
-    beforeProofUrl: 'https://cdn.prod.website-files.com/667c59abb9df9789d17407a6/667dd777d5f64df921fde5fd_20171201-Study-Spaces-Roberge-5_2-scaled.jpeg',
-    afterProofUrl: 'https://about.library.ubc.ca/files/2022/07/UBCLibrary_MalcolmsonCollection_blog_920x512_V2.jpg',
-    reactionCount: 12,
-  },
-  {
-    id: 'mock3',
-    userId: 'u3',
-    username: 'Sarah',
-    avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
-    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 200)),
-    endedAt: null,
-    durationMin: 45,
-    tag: 'Study',
-    note: 'Coffee and algorithms. ☕️📖',
-    status: 'active',
-    beforeProofUrl: 'https://woodward-branch-050713.sites.olt.ubc.ca/files/2022/08/memorialRoom.jpg',
-    afterProofUrl: null,
-    reactionCount: 8,
-  }
-];
+// const MOCK_SESSIONS: Session[] = [
+//   {
+//     id: 'mock1',
+//     userId: 'u1',
+//     username: 'Keanan',
+//     avatarUrl: 'https://i.pravatar.cc/150?u=keanan',
+//     startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 45)),
+//     endedAt: null,
+//     durationMin: 90,
+//     tag: 'Build',
+//     note: 'Grinding on the new mobile app features! 🚀',
+//     status: 'active',
+//     beforeProofUrl: 'https://ikblc.ubc.ca/files/2016/07/ubc-irving-k-barber-learning-centre_23048531806_o-min.jpg',
+//     afterProofUrl: null,
+//     reactionCount: 5,
+//   },
+//   {
+//     id: 'mock2',
+//     userId: 'u2',
+//     username: 'Alex',
+//     avatarUrl: 'https://i.pravatar.cc/150?u=alex',
+//     startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 120)),
+//     endedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 60)),
+//     durationMin: 60,
+//     tag: 'Study',
+//     note: 'Studying chem rn',
+//     status: 'completed',
+//     beforeProofUrl: 'https://cdn.prod.website-files.com/667c59abb9df9789d17407a6/667dd777d5f64df921fde5fd_20171201-Study-Spaces-Roberge-5_2-scaled.jpeg',
+//     afterProofUrl: 'https://about.library.ubc.ca/files/2022/07/UBCLibrary_MalcolmsonCollection_blog_920x512_V2.jpg',
+//     reactionCount: 12,
+//   },
+//   {
+//     id: 'mock3',
+//     userId: 'u3',
+//     username: 'Sarah',
+//     avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
+//     startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 200)),
+//     endedAt: null,
+//     durationMin: 45,
+//     tag: 'Study',
+//     note: 'Coffee and algorithms. ☕️📖',
+//     status: 'active',
+//     beforeProofUrl: 'https://woodward-branch-050713.sites.olt.ubc.ca/files/2022/08/memorialRoom.jpg',
+//     afterProofUrl: null,
+//     reactionCount: 8,
+//   }
+// ];
 
 export default function HomeScreen() {
   const router = useRouter();
   const { profile, signOut } = useAuth();
   const { stats, loading: statsLoading } = useStats();
   const { sessions: feedSessions, loading: feedLoading, refresh: refreshFeed } = useFeed();
-  const sessionsToDisplay = DEMO_MODE ? [...feedSessions, ...MOCK_SESSIONS] : feedSessions;
+  const sessionsToDisplay = DEMO_MODE ? [...feedSessions] : feedSessions;
+  // const sessionsToDisplay = DEMO_MODE ? [...feedSessions, ...MOCK_SESSIONS] : feedSessions;
 
   const handleLockIn = () => {
     router.push('/session/setup');
