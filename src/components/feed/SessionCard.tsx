@@ -1,22 +1,85 @@
 // Session card for feed display
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
+import { useState, useRef } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { Session } from '../../types';
 import { ReactionBar } from './ReactionBar';
-import { TAG_ICONS } from '../../utils/constants';
+import { DecisionBar } from './DecisionBar';
+import { Confetti } from './Confetti';
+import { auth } from '../../services/firebase';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_MARGIN = 0; // Padding is handled by container or content
+const PHOTO_WIDTH = SCREEN_WIDTH;
 
 interface SessionCardProps {
   session: Session;
 }
 
 export function SessionCard({ session }: SessionCardProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [showDecisionOverlay, setShowDecisionOverlay] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [currentDecision, setCurrentDecision] = useState<'tick' | 'cross' | null>(null);
+  const hasHandledInitialDecision = useRef(false);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+  const overlayScale = useRef(new Animated.Value(1)).current;
+  const isMyPost = auth.currentUser?.uid === session.userId;
+
   const statusText = !session.endedAt
     ? 'In Progress...'
     : `${formatDistanceToNow(session.startedAt.toDate(), { addSuffix: false })} ago`;
   const isAbandoned = session.status === 'abandoned';
 
-  const mainPhoto = session.afterProofUrl || session.beforeProofUrl;
-  const insetPhoto = session.afterProofUrl ? session.beforeProofUrl : null;
+  const photos = [session.beforeProofUrl, session.afterProofUrl].filter(Boolean);
+
+  const handleScroll = (event: any) => {
+    const scrollOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollOffset / PHOTO_WIDTH);
+    setActiveIndex(index);
+  };
+
+  const fadeOutOverlay = () => {
+    setShowConfetti(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(overlayScale, {
+        toValue: 0.9,
+        useNativeDriver: true,
+        tension: 40,
+        friction: 7,
+      }),
+    ]).start(() => {
+      setShowDecisionOverlay(false);
+      // Confetti will clean itself up via animation duration internally or we can timeout it
+      setTimeout(() => setShowConfetti(false), 3000);
+    });
+  };
+
+  const reopenOverlay = () => {
+    // Mark as handled so the initial decision check doesn't hide it again
+    hasHandledInitialDecision.current = true;
+    setShowDecisionOverlay(true);
+
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(overlayScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 8,
+      }),
+    ]).start();
+  };
 
   return (
     <View style={[styles.card, isAbandoned && styles.cardAbandoned]}>
@@ -40,36 +103,102 @@ export function SessionCard({ session }: SessionCardProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Status */}
-      {isAbandoned && (
-        <View style={styles.abandonedBadge}>
-          <Text style={styles.abandonedText}>Abandoned</Text>
-        </View>
-      )}
-
       {/* Note */}
       {session.note ? <Text style={styles.note}>{session.note}</Text> : null}
 
-      {/* Photos */}
-      {mainPhoto ? (
+      {/* Photos Carousel */}
+      {photos.length > 0 ? (
         <View style={styles.photoContainer}>
-          <Image
-            source={{ uri: mainPhoto }}
-            style={styles.mainPhoto}
-            resizeMode="cover"
-          />
-          {insetPhoto && (
-            <View style={styles.insetPhotoWrapper}>
-              <Image
-                source={{ uri: insetPhoto }}
-                style={styles.insetPhoto}
-                resizeMode="cover"
-              />
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            style={styles.carousel}
+          >
+            {photos.map((url, index) => (
+              <View key={index} style={styles.photoSlide}>
+                <Image
+                  source={{ uri: url! }}
+                  style={styles.photo}
+                  resizeMode="cover"
+                />
+
+                {/* Decision Bar Overlay (Only on After photo for friends) */}
+                {index === 1 && !isMyPost && (
+                  <>
+                    {showDecisionOverlay ? (
+                      <Animated.View
+                        style={[
+                          styles.decisionOverlay,
+                          {
+                            opacity: overlayOpacity,
+                            transform: [{ scale: overlayScale }]
+                          }
+                        ]}
+                      >
+                        <Text style={styles.decisionPrompt}>Did they lock in?</Text>
+                        <DecisionBar
+                          sessionId={session.id}
+                          onDecision={(decision, isInitial) => {
+                            if (decision) {
+                              setCurrentDecision(decision as any);
+                              if (isInitial && !hasHandledInitialDecision.current) {
+                                // Already answered on mount, hide immediately
+                                setShowDecisionOverlay(false);
+                                overlayOpacity.setValue(0);
+                                hasHandledInitialDecision.current = true;
+                              } else if (!isInitial) {
+                                // User just clicked a choice, fade out
+                                fadeOutOverlay();
+                                hasHandledInitialDecision.current = true;
+                              }
+                            } else {
+                              setCurrentDecision(null);
+                            }
+                          }}
+                        />
+                      </Animated.View>
+                    ) : currentDecision && (
+                      <TouchableOpacity
+                        style={styles.miniDecisionIndicator}
+                        onPress={reopenOverlay}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.miniDecisionEmoji}>
+                          {currentDecision === 'tick' ? '🔒' : '😐'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    <Confetti isActive={showConfetti} type={currentDecision} />
+                  </>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Indicator Dots */}
+          {photos.length > 1 && (
+            <View style={styles.pagination}>
+              {photos.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dot,
+                    activeIndex === index && styles.activeDot,
+                  ]}
+                />
+              ))}
             </View>
           )}
-          <View style={styles.reactionAbsoluteWrapper}>
-            <ReactionBar sessionId={session.id} reactionCount={session.reactionCount || 0} isBeRealStyle={true} />
-          </View>
+
+          {/* Legacy Reaction Bar (Always visible or on first slide?) */}
+          {activeIndex === 0 && (
+            <View style={styles.reactionAbsoluteWrapper}>
+              <ReactionBar sessionId={session.id} reactionCount={session.reactionCount || 0} isBeRealStyle={true} />
+            </View>
+          )}
         </View>
       ) : null}
     </View>
@@ -78,9 +207,9 @@ export function SessionCard({ session }: SessionCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 0,
-    paddingVertical: 8,
+    paddingVertical: 12,
     marginBottom: 16,
+    backgroundColor: '#111827',
   },
   cardAbandoned: {
     opacity: 0.6,
@@ -135,51 +264,90 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 3 / 4,
     position: 'relative',
-    backgroundColor: '#111827',
   },
-  mainPhoto: {
+  carousel: {
+    flex: 1,
+  },
+  photoSlide: {
+    width: PHOTO_WIDTH,
+    height: '100%',
+    position: 'relative',
+  },
+  photo: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
+    borderRadius: 16,
   },
-  insetPhotoWrapper: {
+  pagination: {
     position: 'absolute',
     top: 12,
-    left: 12,
-    width: '30%',
-    aspectRatio: 3 / 4,
-    borderRadius: 16, // Increased curve
-    borderWidth: 2,
-    borderColor: 'black',
-    overflow: 'hidden',
-    backgroundColor: '#1F2937',
+    right: 12,
+    flexDirection: 'row',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  insetPhoto: {
-    width: '100%',
-    height: '100%',
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  activeDot: {
+    backgroundColor: 'white',
+    width: 12, // Longer dot for active
   },
   reactionAbsoluteWrapper: {
     position: 'absolute',
     bottom: 12,
     right: 12,
   },
-  abandonedBadge: {
-    backgroundColor: 'rgba(220, 38, 38, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginHorizontal: 12,
-    marginBottom: 12,
+  decisionOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent', // Removed black opacity overlay
   },
-  abandonedText: {
-    color: '#F87171',
-    fontSize: 14,
+  decisionPrompt: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+  },
+  miniDecisionIndicator: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(31, 41, 55, 0.9)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  miniDecisionEmoji: {
+    fontSize: 22,
   },
   note: {
     color: 'white',
     paddingHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 8,
+    marginBottom: 12,
     fontSize: 15,
     lineHeight: 20,
   },

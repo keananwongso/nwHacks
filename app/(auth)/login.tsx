@@ -40,7 +40,6 @@ export default function LoginScreen() {
         await signIn(identifier, password);
       }
     } catch (err: any) {
-      console.error('Auth error:', err);
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);

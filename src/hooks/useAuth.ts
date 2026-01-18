@@ -60,7 +60,6 @@ export function useAuth(): AuthState {
     try {
       await signIn(username, password);
     } catch (error) {
-      console.error('Sign in error:', error);
       setLoading(false);
       throw error;
     }
@@ -71,7 +70,6 @@ export function useAuth(): AuthState {
     try {
       await signUp(username, password);
     } catch (error) {
-      console.error('Sign up error:', error);
       setLoading(false);
       throw error;
     }
