@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSessionStore } from '../../src/stores/sessionStore';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useFriends } from '../../src/hooks/useFriends';
 import {
   DURATION_PRESETS,
   SESSION_TAGS,
@@ -23,18 +24,12 @@ import {
 import { DurationPicker } from '../../src/components/session/DurationPicker';
 import { TagSelector } from '../../src/components/session/TagSelector';
 
-const MOCK_FRIENDS = [
-  { id: '1', name: 'Alex', avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: '2', name: 'Sam', avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: '3', name: 'Jordan', avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: '4', name: 'Taylor', avatar: 'https://i.pravatar.cc/150?u=4' },
-  { id: '5', name: 'Casey', avatar: 'https://i.pravatar.cc/150?u=5' },
-];
 
 export default function SetupScreen() {
   const router = useRouter();
   const { initialProofUri } = useLocalSearchParams<{ initialProofUri: string }>();
   const { profile } = useAuth();
+  const { friends } = useFriends();
   const startSession = useSessionStore((state) => state.startSession);
   const submitBeforeProof = useSessionStore((state) => state.submitBeforeProof);
 
@@ -119,22 +114,22 @@ export default function SetupScreen() {
             contentContainerStyle={styles.friendCircles}
           >
             {/* Friend circles - multi-select */}
-            {MOCK_FRIENDS.map((friend) => {
-              const isSelected = selectedBuddies.includes(friend.id);
+            {friends.map((friend) => {
+              const isSelected = selectedBuddies.includes(friend.uid);
               return (
                 <TouchableOpacity
-                  key={friend.id}
+                  key={friend.uid}
                   style={styles.friendCircle}
                   onPress={() => {
                     if (isSelected) {
-                      setSelectedBuddies(selectedBuddies.filter(id => id !== friend.id));
+                      setSelectedBuddies(selectedBuddies.filter(id => id !== friend.uid));
                     } else {
-                      setSelectedBuddies([...selectedBuddies, friend.id]);
+                      setSelectedBuddies([...selectedBuddies, friend.uid]);
                     }
                   }}
                 >
                   <View style={[styles.friendAvatar, isSelected && styles.friendAvatarSelected]}>
-                    <Image source={{ uri: friend.avatar }} style={styles.friendAvatarImage} />
+                    <Image source={{ uri: friend.avatarUrl || 'https://i.pravatar.cc/150' }} style={styles.friendAvatarImage} />
                     {isSelected && (
                       <View style={styles.checkBadge}>
                         <Ionicons name="checkmark" size={12} color="white" />
@@ -142,7 +137,7 @@ export default function SetupScreen() {
                     )}
                   </View>
                   <Text style={[styles.friendName, isSelected && styles.friendNameSelected]}>
-                    {friend.name}
+                    {friend.fullName || friend.username}
                   </Text>
                 </TouchableOpacity>
               );
