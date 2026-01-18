@@ -2,28 +2,29 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 interface TimerProps {
-  secondsRemaining: number;
+  secondsElapsed: number;
+  totalSeconds: number;
 }
 
-export function Timer({ secondsRemaining }: TimerProps) {
-  const minutes = Math.floor(secondsRemaining / 60);
-  const seconds = secondsRemaining % 60;
+export function Timer({ secondsElapsed, totalSeconds }: TimerProps) {
+  const minutes = Math.floor(secondsElapsed / 60);
+  const seconds = secondsElapsed % 60;
 
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds
     .toString()
     .padStart(2, '0')}`;
 
-  // Color based on time remaining
+  // Simple progress bar-like color or just white
   const getColor = () => {
-    if (secondsRemaining <= 60) return '#F87171'; // red
-    if (secondsRemaining <= 300) return '#FBBF24'; // yellow
+    // If we want urgency, maybe when close to total?
+    // For counting up, usually just white/primary.
     return '#FFFFFF';
   };
 
   return (
     <View style={styles.container}>
       <Text style={[styles.time, { color: getColor() }]}>{formattedTime}</Text>
-      <Text style={styles.label}>remaining</Text>
+      <Text style={styles.label}>locked in</Text>
     </View>
   );
 }

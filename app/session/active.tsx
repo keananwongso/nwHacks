@@ -19,30 +19,29 @@ export default function ActiveSessionScreen() {
     abandonSession,
   } = useSessionStore();
 
-  const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [proofWindowPassed, setProofWindowPassed] = useState(false);
 
-  // Calculate remaining time
+  // Calculate/Track elapsed time
   useEffect(() => {
-    if (!startedAt || !durationMin) return;
+    if (!startedAt) return;
 
-    const endTime = new Date(startedAt).getTime() + durationMin * 60 * 1000;
+    const startTime = new Date(startedAt).getTime();
+    const durationSeconds = durationMin * 60;
 
     const interval = setInterval(() => {
       const now = Date.now();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
-      setSecondsRemaining(remaining);
+      const elapsed = Math.floor((now - startTime) / 1000);
+      setSecondsElapsed(elapsed);
 
-      // Check if proof window has passed
-      const elapsed = Math.floor((now - new Date(startedAt).getTime()) / 1000);
+      // Check if proof window has passed (start check immediately)
       if (elapsed > PROOF_WINDOW_SECONDS && !beforeProofUrl) {
         setProofWindowPassed(true);
       }
 
-      // Auto-end when timer hits zero
-      if (remaining === 0) {
-        clearInterval(interval);
-        handleEndSession();
+      // Auto-end removed: User must manually end session even if target reached.
+      if (durationMin > 0 && elapsed >= durationSeconds) {
+        // Optional: Vibrate or notify user target is reached, but keep counting.
       }
     }, 1000);
 
@@ -88,7 +87,7 @@ export default function ActiveSessionScreen() {
         </View>
 
         {/* Timer */}
-        <Timer secondsRemaining={secondsRemaining} />
+        <Timer secondsElapsed={secondsElapsed} totalSeconds={durationMin * 60} />
 
         {/* Proof Status */}
         <View style={styles.proofStatus}>
@@ -116,7 +115,7 @@ export default function ActiveSessionScreen() {
       {/* Bottom Actions */}
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleEndSession} style={styles.endButton}>
-          <Text style={styles.endButtonText}>End Session Early</Text>
+          <Text style={styles.endButtonText}>End Session</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleAbandon} style={styles.abandonButton}>
