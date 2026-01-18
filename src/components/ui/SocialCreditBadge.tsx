@@ -52,12 +52,10 @@ export function SocialCreditBadge({
 
   const sizeStyles = getSizeStyles();
   const scoreColor = getScoreColor();
-  const scoreIcon = getScoreIcon();
   const displayScore = score >= 0 ? `+${score}` : `${score}`;
 
   return (
     <View style={[styles.container, sizeStyles.container, { borderColor: scoreColor }]}>
-      <Text style={sizeStyles.icon}>{scoreIcon}</Text>
       <Text style={[sizeStyles.score, { color: scoreColor }]}>
         {displayScore}
       </Text>

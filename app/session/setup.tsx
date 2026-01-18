@@ -51,7 +51,7 @@ export default function SetupScreen() {
       await startSession(
         duration,
         tag,
-        '', // note removed from UI
+        note, // Pass the actual note from state
         profile.username,
         profile.avatarUrl,
         witnessId
@@ -146,7 +146,15 @@ export default function SetupScreen() {
                   }}
                 >
                   <View style={[styles.friendAvatar, isSelected && styles.friendAvatarSelected]}>
-                    <Image source={{ uri: friend.avatarUrl || 'https://i.pravatar.cc/150' }} style={styles.friendAvatarImage} />
+                    {friend.avatarUrl ? (
+                      <Image source={{ uri: friend.avatarUrl }} style={styles.friendAvatarImage} />
+                    ) : (
+                      <View style={styles.friendAvatarPlaceholder}>
+                        <Text style={styles.friendAvatarInitial}>
+                          {(friend.fullName || friend.username)?.[0]?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
                     {isSelected && (
                       <View style={styles.checkBadge}>
                         <Ionicons name="checkmark" size={12} color="white" />
@@ -387,6 +395,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 22,
+  },
+  friendAvatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
+    backgroundColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendAvatarInitial: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   friendName: {
     color: '#9CA3AF',

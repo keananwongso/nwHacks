@@ -493,6 +493,7 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: 'white',
   },
   userInfo: {
     flex: 1,
