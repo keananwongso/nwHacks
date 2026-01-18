@@ -1,6 +1,7 @@
-// Friend list item component
 import { View, Text, Image, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
 import { Profile } from '../../types';
+import { subscribeToUserActiveStatus } from '../../services/sessions';
 
 interface FriendListItemProps {
   friend: Profile;
@@ -8,6 +9,15 @@ interface FriendListItemProps {
 }
 
 export function FriendListItem({ friend, onRemove }: FriendListItemProps) {
+  const [isUserActive, setIsUserActive] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToUserActiveStatus(friend.uid, (active) => {
+      setIsUserActive(active);
+    });
+    return () => unsubscribe();
+  }, [friend.uid]);
+
   const handleRemove = () => {
     Alert.alert(
       'Remove Friend',
@@ -32,7 +42,13 @@ export function FriendListItem({ friend, onRemove }: FriendListItemProps) {
       )}
 
       <View style={styles.info}>
-        <Text style={styles.name}>{friend.fullName}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{friend.fullName}</Text>
+          <View style={[
+            styles.statusDot,
+            { backgroundColor: isUserActive ? '#FBBC05' : '#4FC3F7' }
+          ]} />
+        </View>
         <Text style={styles.username}>@{friend.username}</Text>
       </View>
 
@@ -82,6 +98,16 @@ const styles = StyleSheet.create({
   username: {
     color: '#9CA3AF',
     fontSize: 14,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   removeText: {
     color: '#6B7280',
