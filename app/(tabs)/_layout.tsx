@@ -12,24 +12,19 @@ export default function TabsLayout() {
         tabBarShowLabel: true,
         tabBarItemStyle: {
           paddingVertical: 10,
+          justifyContent: 'center',
         },
         tabBarStyle: {
-          backgroundColor: '#1F2937', // Slightly lighter than bg
+          backgroundColor: '#1F2937', // Opaque
           borderTopWidth: 0,
+          height: 85,
+          paddingBottom: 25,
+          paddingTop: 10,
           position: 'absolute',
-          bottom: 25,
-          left: 20,
-          right: 20,
-          height: 70,
-          borderRadius: 35,
-          borderWidth: 1,
-          borderColor: '#374151', // Border for definition
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 5 },
-          shadowOpacity: 0.3,
-          shadowRadius: 5,
-          paddingBottom: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          elevation: 0,
         },
         headerStyle: {
           backgroundColor: '#111827',
@@ -62,7 +57,6 @@ export default function TabsLayout() {
                 backgroundColor: '#FFFFFF',
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: 12, // Push down to center in the 70px bar
                 shadowColor: '#000',
                 shadowOffset: {
                   width: 0,

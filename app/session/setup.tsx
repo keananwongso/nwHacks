@@ -126,7 +126,7 @@ export default function SetupScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.friendCircles}
           >
-            {/* Friend circles - multi-select */}
+            {/* Friend circles - single-select */}
             {friends.map((friend) => {
               const isSelected = selectedBuddies.includes(friend.uid);
               return (
@@ -135,9 +135,9 @@ export default function SetupScreen() {
                   style={styles.friendCircle}
                   onPress={() => {
                     if (isSelected) {
-                      setSelectedBuddies(selectedBuddies.filter(id => id !== friend.uid));
+                      setSelectedBuddies([]);
                     } else {
-                      setSelectedBuddies([...selectedBuddies, friend.uid]);
+                      setSelectedBuddies([friend.uid]);
                     }
                   }}
                 >

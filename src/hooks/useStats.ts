@@ -33,14 +33,14 @@ export function useStats() {
       const weekStart = subDays(new Date(), 7);
       const minutesThisWeek = completedSessions
         .filter((s) => s.startedAt?.toDate() >= weekStart)
-        .reduce((sum, s) => sum + (s.actualDurationMin ?? s.durationMin), 0);
+        .reduce((sum, s) => sum + s.durationMin, 0);
 
       // Calculate hourly activity for today (24 buckets)
       const hourlyBuckets = new Array(24).fill(0);
       today.forEach(s => {
         if (s.startedAt && s.status === 'completed') {
           const hour = s.startedAt.toDate().getHours();
-          hourlyBuckets[hour] += (s.actualDurationMin ?? s.durationMin);
+          hourlyBuckets[hour] += s.durationMin;
         }
       });
 

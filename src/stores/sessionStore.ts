@@ -75,18 +75,12 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
   },
 
   endSession: async () => {
-    const { sessionId, startedAt } = get();
-    if (!sessionId || !startedAt) throw new Error('No active session');
-
-    // Calculate actual duration worked (in minutes)
-    const endTime = new Date();
-    const actualDurationMs = endTime.getTime() - new Date(startedAt).getTime();
-    const actualDurationMin = Math.round(actualDurationMs / (1000 * 60)); // Convert to minutes
+    const { sessionId } = get();
+    if (!sessionId) throw new Error('No active session');
 
     // Timer ended, set status to completed so user appears "free" (blue dot)
     await updateDoc(doc(db, 'sessions', sessionId), {
       endedAt: serverTimestamp(),
-      actualDurationMin,
       status: 'completed' as SessionStatus,
     });
 
