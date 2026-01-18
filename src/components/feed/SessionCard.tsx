@@ -8,7 +8,8 @@ import { ReactionBar } from './ReactionBar';
 import { DecisionBar } from './DecisionBar';
 import { Confetti } from './Confetti';
 import { auth } from '../../services/firebase';
-import { deleteSession } from '../../services/sessions';
+import { deleteSession, subscribeToUserActiveStatus } from '../../services/sessions';
+import { useEffect } from 'react';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 0; // Padding is handled by container or content
@@ -23,6 +24,7 @@ export function SessionCard({ session }: SessionCardProps) {
   const [showDecisionOverlay, setShowDecisionOverlay] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [currentDecision, setCurrentDecision] = useState<'tick' | 'cross' | null>(null);
+  const [isUserActive, setIsUserActive] = useState(false);
   const hasHandledInitialDecision = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const overlayScale = useRef(new Animated.Value(1)).current;
@@ -34,6 +36,13 @@ export function SessionCard({ session }: SessionCardProps) {
   const isAbandoned = session.status === 'abandoned';
 
   const photos = [session.beforeProofUrl, session.afterProofUrl].filter(Boolean);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToUserActiveStatus(session.userId, (active) => {
+      setIsUserActive(active);
+    });
+    return () => unsubscribe();
+  }, [session.userId]);
 
   const handleScroll = (event: any) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
@@ -96,7 +105,13 @@ export function SessionCard({ session }: SessionCardProps) {
           </View>
         )}
         <View style={styles.headerText}>
-          <Text style={styles.username}>{session.username}</Text>
+          <View style={styles.usernameRow}>
+            <Text style={styles.username}>{session.username}</Text>
+            <View style={[
+              styles.statusDot,
+              { backgroundColor: isUserActive ? '#FBBC05' : '#4FC3F7' }
+            ]} />
+          </View>
           <Text style={styles.location}>Life Sciences Institute, UBC • {statusText}</Text>
         </View>
         {isMyPost && (
@@ -274,6 +289,16 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
     fontSize: 14,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
   },
   location: {
     color: '#9CA3AF',

@@ -116,3 +116,18 @@ export function subscribeToFriendsSessions(
     onUpdate({ sessions, lastDoc });
   });
 }
+export function subscribeToUserActiveStatus(
+  userId: string,
+  onUpdate: (isActive: boolean) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'sessions'),
+    where('userId', '==', userId),
+    where('status', '==', 'active'),
+    limit(1)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    onUpdate(!snapshot.empty);
+  });
+}

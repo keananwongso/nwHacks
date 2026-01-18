@@ -78,9 +78,13 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
     const { sessionId } = get();
     if (!sessionId) throw new Error('No active session');
 
+    // Timer ended, set status to completed so user appears "free" (blue dot)
     await updateDoc(doc(db, 'sessions', sessionId), {
       endedAt: serverTimestamp(),
+      status: 'completed' as SessionStatus,
     });
+
+    set({ status: 'completed' });
   },
 
   submitAfterProof: async (imageUri: string) => {
