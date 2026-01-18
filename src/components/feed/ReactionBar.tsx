@@ -1,22 +1,43 @@
 // Reaction bar component
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
 import { REACTION_EMOJIS, ReactionEmoji } from '../../utils/constants';
 import { addReaction, removeReaction, getUserReaction } from '../../services/reactions';
+import { ConfettiBurst, ConfettiBurstHandle } from './ConfettiBurst';
 
 interface ReactionBarProps {
   sessionId: string;
   reactionCount: number;
+  isBeRealStyle?: boolean;
 }
 
-export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
+export function ReactionBar({ sessionId, reactionCount, isBeRealStyle }: ReactionBarProps) {
   const [userReaction, setUserReaction] = useState<ReactionEmoji | null>(null);
   const [localCount, setLocalCount] = useState(reactionCount);
   const [showPicker, setShowPicker] = useState(false);
 
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const confettiRef = useRef<ConfettiBurstHandle>(null);
+
   useEffect(() => {
     getUserReaction(sessionId).then(setUserReaction);
   }, [sessionId]);
+
+  const animatePop = () => {
+    Animated.sequence([
+      Animated.spring(scaleAnim, {
+        toValue: 1.4,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 15,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 40,
+      }),
+    ]).start();
+  };
 
   const handleReaction = async (emoji: ReactionEmoji) => {
     try {
@@ -33,6 +54,8 @@ export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
         if (!hadReaction) {
           setLocalCount((c) => c + 1);
         }
+        animatePop();
+        confettiRef.current?.start();
       }
     } catch (error) {
       console.error('Reaction error:', error);
@@ -41,23 +64,32 @@ export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
   };
 
   return (
-    <View>
+    <View style={isBeRealStyle && styles.containerBeReal}>
       <View style={styles.mainRow}>
-        <TouchableOpacity
-          onPress={() => setShowPicker(!showPicker)}
-          style={[styles.reactButton, userReaction && styles.reactButtonActive]}
-        >
-          {userReaction ? (
-            <>
-              <Text style={styles.emoji}>{userReaction}</Text>
-              <Text style={styles.reactedText}>You reacted</Text>
-            </>
-          ) : (
-            <Text style={styles.reactText}>React</Text>
-          )}
-        </TouchableOpacity>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity
+            onPress={() => setShowPicker(!showPicker)}
+            style={[
+              styles.reactButton,
+              userReaction && styles.reactButtonActive,
+              isBeRealStyle && styles.reactButtonBeReal,
+            ]}
+          >
+            {isBeRealStyle ? (
+              <Text style={styles.smileyIcon}>{userReaction || '😊'}</Text>
+            ) : userReaction ? (
+              <>
+                <Text style={styles.emoji}>{userReaction}</Text>
+                <Text style={styles.reactedText}>You reacted</Text>
+              </>
+            ) : (
+              <Text style={styles.reactText}>React</Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+        <ConfettiBurst ref={confettiRef} />
 
-        {localCount > 0 && (
+        {!isBeRealStyle && localCount > 0 && (
           <Text style={styles.count}>
             {localCount} reaction{localCount !== 1 ? 's' : ''}
           </Text>
@@ -65,7 +97,7 @@ export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
       </View>
 
       {showPicker && (
-        <View style={styles.picker}>
+        <View style={[styles.picker, isBeRealStyle && styles.pickerBeReal]}>
           {REACTION_EMOJIS.map((emoji) => (
             <TouchableOpacity
               key={emoji}
@@ -75,7 +107,12 @@ export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
                 userReaction === emoji && styles.emojiButtonActive,
               ]}
             >
-              <Text style={styles.pickerEmoji}>{emoji}</Text>
+              <Text style={[
+                styles.pickerEmoji,
+                userReaction === emoji && styles.pickerEmojiActive
+              ]}>
+                {emoji}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -85,6 +122,10 @@ export function ReactionBar({ sessionId, reactionCount }: ReactionBarProps) {
 }
 
 const styles = StyleSheet.create({
+  containerBeReal: {
+    position: 'relative',
+    zIndex: 10,
+  },
   mainRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -100,6 +141,20 @@ const styles = StyleSheet.create({
   },
   reactButtonActive: {
     backgroundColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  reactButtonBeReal: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  smileyIcon: {
+    fontSize: 24,
+    textAlign: 'center',
   },
   emoji: {
     fontSize: 16,
@@ -123,16 +178,44 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     padding: 8,
   },
+  pickerBeReal: {
+    position: 'absolute',
+    bottom: 56,
+    right: 0,
+    width: 44,
+    backgroundColor: 'rgba(31, 41, 55, 0.98)',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
+    paddingVertical: 6,
+    borderRadius: 22,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emojiButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
-    marginHorizontal: 2,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 22,
+    marginVertical: 4,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emojiButtonActive: {
-    backgroundColor: '#6366F1',
+    backgroundColor: 'rgba(99, 102, 241, 0.3)',
   },
   pickerEmoji: {
-    fontSize: 20,
+    fontSize: 22,
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  pickerEmojiActive: {
+    // Selection state handled by button background
   },
 });

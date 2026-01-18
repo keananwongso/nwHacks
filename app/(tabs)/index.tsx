@@ -1,25 +1,89 @@
-// Home screen - Lock In button, today status, stats
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, RefreshControl } from 'react-native';
+import { Timestamp } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useStats } from '../../src/hooks/useStats';
-import { StatsCard } from '../../src/components/home/StatsCard';
-import { TodayStatus } from '../../src/components/home/TodayStatus';
+import { useFeed } from '../../src/hooks/useFeed';
+import { TodayBlob } from '../../src/components/home/TodayBlob';
+import { SessionCard } from '../../src/components/feed/SessionCard';
 import { DEMO_MODE } from '../../src/utils/constants';
+import { Session } from '../../src/types';
+
+const MOCK_SESSIONS: Session[] = [
+  {
+    id: 'mock1',
+    userId: 'u1',
+    username: 'Keanan',
+    avatarUrl: 'https://i.pravatar.cc/150?u=keanan',
+    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 45)),
+    endedAt: null,
+    durationMin: 90,
+    tag: 'Build',
+    note: 'Grinding on the new mobile app features! 🚀',
+    status: 'active',
+    beforeProofUrl: 'https://ikblc.ubc.ca/files/2016/07/ubc-irving-k-barber-learning-centre_23048531806_o-min.jpg',
+    afterProofUrl: null,
+    reactionCount: 5,
+  },
+  {
+    id: 'mock2',
+    userId: 'u2',
+    username: 'Alex',
+    avatarUrl: 'https://i.pravatar.cc/150?u=alex',
+    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 120)),
+    endedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 60)),
+    durationMin: 60,
+    tag: 'Study',
+    note: 'Studying chem rn',
+    status: 'completed',
+    beforeProofUrl: 'https://cdn.prod.website-files.com/667c59abb9df9789d17407a6/667dd777d5f64df921fde5fd_20171201-Study-Spaces-Roberge-5_2-scaled.jpeg',
+    afterProofUrl: 'https://about.library.ubc.ca/files/2022/07/UBCLibrary_MalcolmsonCollection_blog_920x512_V2.jpg',
+    reactionCount: 12,
+  },
+  {
+    id: 'mock3',
+    userId: 'u3',
+    username: 'Sarah',
+    avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
+    startedAt: Timestamp.fromDate(new Date(Date.now() - 1000 * 60 * 200)),
+    endedAt: null,
+    durationMin: 45,
+    tag: 'Study',
+    note: 'Coffee and algorithms. ☕️📖',
+    status: 'active',
+    beforeProofUrl: 'https://woodward-branch-050713.sites.olt.ubc.ca/files/2022/08/memorialRoom.jpg',
+    afterProofUrl: null,
+    reactionCount: 8,
+  }
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const { profile, signOut } = useAuth();
-  const { stats, todaySessions } = useStats();
+  const { stats, loading: statsLoading } = useStats();
+  const { sessions: feedSessions, loading: feedLoading, refresh: refreshFeed } = useFeed();
+  const sessionsToDisplay = DEMO_MODE ? [...feedSessions, ...MOCK_SESSIONS] : feedSessions;
 
   const handleLockIn = () => {
     router.push('/session/setup');
   };
 
+  const todayMinutes = stats?.hourlyBuckets?.reduce((a: number, b: number) => a + b, 0) || 0;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={statsLoading || feedLoading}
+            onRefresh={refreshFeed}
+            tintColor="#6366F1"
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeftContainer}>
@@ -51,48 +115,44 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Lock In Button */}
-        {/* <TouchableOpacity
-          onPress={handleLockIn}
-          style={styles.lockInButton}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.lockInEmoji}>🔒</Text>
-          <Text style={styles.lockInText}>Lock In</Text>
-          <Text style={styles.lockInSubtext}>Start a focused session</Text>
-        </TouchableOpacity> */}
+        {/* Today Stats Blob */}
+        <TodayBlob
+          minutes={todayMinutes}
+          sessions={stats?.sessionsToday || 0}
+          hourlyBuckets={stats?.hourlyBuckets || new Array(24).fill(0)}
+          style={styles.todayBlob}
+        />
 
-        {/* Statistics */}
-        <TouchableOpacity
-          style={styles.lockInButton}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.lockInEmoji}>🔒</Text>
-          <Text style={styles.lockInText}>Lock In</Text>
-          <Text style={styles.lockInSubtext}>Start a focused session</Text>
-        </TouchableOpacity>
+        {/* Feed Section */}
+        <View style={styles.feedSection}>
+          <Text style={styles.feedTitle}>Friend Activity</Text>
+          {sessionsToDisplay.length > 0 ? (
+            sessionsToDisplay.map((session) => (
+              <View key={session.id} style={styles.feedItem}>
+                <SessionCard session={session} />
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyFeed}>
+              <Text style={styles.emptyTitle}>No activity from friends yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Start a session or add friends to see their activity here!
+              </Text>
+            </View>
+          )}
 
-        {/* Today's Status */}
-        <TodayStatus sessions={todaySessions} />
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <StatsCard
-            label="Total Sessions"
-            value={stats?.totalSessions || 0}
-            icon="📊"
-          />
-          <StatsCard
-            label="Minutes This Week"
-            value={stats?.minutesThisWeek || 0}
-            icon="⏱️"
-          />
+          {sessionsToDisplay.length > 0 && (
+            <View style={styles.footerContainer}>
+              <Text style={styles.footerEmoji}>☀️</Text>
+              <Text style={styles.footerTitle}>
+                And with that, we wrap up today's lock-in.
+              </Text>
+              <Text style={styles.footerSubtitle}>
+                Now, you can lock out. Go touch some grass!
+              </Text>
+            </View>
+          )}
         </View>
-
-        {/* Sign Out */}
-        <TouchableOpacity onPress={signOut} style={styles.signOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -107,13 +167,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 24,
+    paddingVertical: 24,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 25,
+    paddingHorizontal: 24,
   },
   headerLeftContainer: {
     flexDirection: 'row',
@@ -204,11 +266,66 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 16,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 24,
+  todayBlob: {
+    marginBottom: 15,
+    marginHorizontal: 24,
+  },
+  feedSection: {
+    marginTop: 8,
+  },
+  feedTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 21,
+    paddingHorizontal: 24,
+  },
+  feedItem: {
+    marginBottom: 16,
+  },
+  emptyFeed: {
+    padding: 40,
+    marginHorizontal: 24,
+    alignItems: 'center',
+    backgroundColor: '#1F2937',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#374151',
+    borderStyle: 'dashed',
+  },
+  emptyTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  footerContainer: {
+    paddingVertical: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  footerEmoji: {
+    fontSize: 40,
+    marginBottom: 16,
+  },
+  footerTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  footerSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   signOut: {
     marginTop: 32,
