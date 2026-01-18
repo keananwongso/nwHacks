@@ -1,4 +1,4 @@
-# Lockedout 🔒
+# Lockout 🔒
 
 A social accountability app to help you lock in and stay focused. Start timed sessions, share proof, and build streaks with friends.
 
