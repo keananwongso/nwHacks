@@ -37,7 +37,8 @@ export interface Session {
   avatarUrl: string | null;
   startedAt: Timestamp;
   endedAt: Timestamp | null;
-  durationMin: number;
+  durationMin: number; // Target duration in minutes
+  actualDurationMin?: number; // Actual duration worked (calculated when ended)
   tag: SessionTag;
   note: string;
   status: SessionStatus;

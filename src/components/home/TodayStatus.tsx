@@ -10,7 +10,7 @@ export function TodayStatus({ sessions }: TodayStatusProps) {
   const completed = sessions.filter((s) => s.status === 'completed').length;
   const totalMinutes = sessions
     .filter((s) => s.status === 'completed')
-    .reduce((sum, s) => sum + s.durationMin, 0);
+    .reduce((sum, s) => sum + (s.actualDurationMin ?? s.durationMin), 0);
 
   return (
     <View style={styles.container}>
