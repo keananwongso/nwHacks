@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { Session } from '../../types';
+import { Timestamp } from 'firebase/firestore';
 import { ReactionBar } from './ReactionBar';
 import { DecisionBar } from './DecisionBar';
 import { Confetti } from './Confetti';
@@ -24,7 +25,7 @@ export function SessionCard({ session }: SessionCardProps) {
   const [showDecisionOverlay, setShowDecisionOverlay] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [currentDecision, setCurrentDecision] = useState<'tick' | 'cross' | null>(null);
-  const [isUserActive, setIsUserActive] = useState(false);
+  const [activeSessionData, setActiveSessionData] = useState<{ isActive: boolean; startedAt?: Timestamp | null }>({ isActive: false });
   const hasHandledInitialDecision = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const overlayScale = useRef(new Animated.Value(1)).current;
@@ -38,11 +39,32 @@ export function SessionCard({ session }: SessionCardProps) {
   const photos = [session.beforeProofUrl, session.afterProofUrl].filter(Boolean);
 
   useEffect(() => {
-    const unsubscribe = subscribeToUserActiveStatus(session.userId, (active) => {
-      setIsUserActive(active);
+    const unsubscribe = subscribeToUserActiveStatus(session.userId, (data) => {
+      setActiveSessionData(data);
     });
     return () => unsubscribe();
   }, [session.userId]);
+
+  // Timer for active session duration
+  const [elapsed, setElapsed] = useState('');
+  useEffect(() => {
+    if (!activeSessionData.isActive || !activeSessionData.startedAt) {
+      setElapsed('');
+      return;
+    }
+
+    const updateElapsed = () => {
+      const start = activeSessionData.startedAt!.toDate();
+      const diffTotalSec = Math.floor((new Date().getTime() - start.getTime()) / 1000);
+      const m = Math.floor(diffTotalSec / 60);
+      const s = diffTotalSec % 60;
+      setElapsed(`${m}:${s.toString().padStart(2, '0')}`);
+    };
+
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [activeSessionData.isActive, activeSessionData.startedAt]);
 
   const handleScroll = (event: any) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
@@ -109,8 +131,11 @@ export function SessionCard({ session }: SessionCardProps) {
             <Text style={styles.username}>{session.username}</Text>
             <View style={[
               styles.statusDot,
-              { backgroundColor: isUserActive ? '#FBBC05' : '#4FC3F7' }
+              { backgroundColor: activeSessionData.isActive ? '#FBBC05' : '#4FC3F7' }
             ]} />
+            {activeSessionData.isActive && elapsed && (
+              <Text style={styles.activeDuration}>• {elapsed}</Text>
+            )}
           </View>
           <Text style={styles.location}>Life Sciences Institute, UBC • {statusText}</Text>
         </View>
@@ -299,6 +324,12 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginLeft: 8,
+  },
+  activeDuration: {
+    color: '#FBBC05',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   location: {
     color: '#9CA3AF',

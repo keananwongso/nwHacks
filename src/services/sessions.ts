@@ -118,7 +118,7 @@ export function subscribeToFriendsSessions(
 }
 export function subscribeToUserActiveStatus(
   userId: string,
-  onUpdate: (isActive: boolean) => void
+  onUpdate: (data: { isActive: boolean; startedAt?: Timestamp | null }) => void
 ): Unsubscribe {
   const q = query(
     collection(db, 'sessions'),
@@ -128,6 +128,14 @@ export function subscribeToUserActiveStatus(
   );
 
   return onSnapshot(q, (snapshot) => {
-    onUpdate(!snapshot.empty);
+    if (snapshot.empty) {
+      onUpdate({ isActive: false });
+    } else {
+      const data = snapshot.docs[0].data();
+      onUpdate({
+        isActive: true,
+        startedAt: data.startedAt as Timestamp,
+      });
+    }
   });
 }
