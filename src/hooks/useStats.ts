@@ -35,13 +35,23 @@ export function useStats() {
         .filter((s) => s.startedAt?.toDate() >= weekStart)
         .reduce((sum, s) => sum + s.durationMin, 0);
 
+      // Calculate hourly activity for today (24 buckets)
+      const hourlyBuckets = new Array(24).fill(0);
+      today.forEach(s => {
+        if (s.startedAt && s.status === 'completed') {
+          const hour = s.startedAt.toDate().getHours();
+          hourlyBuckets[hour] += s.durationMin;
+        }
+      });
+
       setStats({
         currentStreak,
         longestStreak,
         totalSessions: completedSessions.length,
         minutesThisWeek,
         sessionsToday: today.filter((s) => s.status === 'completed').length,
-      });
+        hourlyBuckets,
+      } as any);
     } catch (error) {
       console.error('Failed to load stats:', error);
     } finally {

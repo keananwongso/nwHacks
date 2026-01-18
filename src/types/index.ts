@@ -60,6 +60,7 @@ export interface UserStats {
   totalSessions: number;
   minutesThisWeek: number;
   sessionsToday: number;
+  hourlyBuckets: number[];
 }
 
 // Active session state (Zustand store)
