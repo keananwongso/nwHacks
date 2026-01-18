@@ -9,7 +9,7 @@ import { useSessionStore } from '../../src/stores/sessionStore';
 export default function AfterPreviewScreen() {
   const router = useRouter();
   const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
-  const { submitAfterProof } = useSessionStore();
+  const { submitAfterProof, witnessId } = useSessionStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRetake = () => {
@@ -22,8 +22,13 @@ export default function AfterPreviewScreen() {
     setIsSubmitting(true);
     try {
       await submitAfterProof(photoUri);
-      // Navigate to feed after successful submission
-      router.replace('/(tabs)/feed');
+      // Navigate based on witness status
+      if (witnessId) {
+        // Go back to active session screen which now shows "Waiting..."
+        router.replace('/session/active');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Failed to submit after proof:', error);
       Alert.alert('Error', 'Failed to submit proof. Please try again.');

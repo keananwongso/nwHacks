@@ -27,7 +27,7 @@ export interface FriendRelation {
 }
 
 // Session status
-export type SessionStatus = 'active' | 'completed' | 'abandoned';
+export type SessionStatus = 'active' | 'awaiting_witness' | 'challenged' | 'completed' | 'abandoned';
 
 // Session document at sessions/{sessionId}
 export interface Session {
@@ -44,6 +44,12 @@ export interface Session {
   beforeProofUrl: string | null;
   afterProofUrl: string | null;
   reactionCount: number;
+  // Witness fields
+  witnessId?: string;
+  witnessResponse?: 'approved' | 'rejected' | 'timeout'; // 'approved' | 'rejected' | 'timeout'
+  challengeProofUrl?: string | null;
+  aiConfidence?: number;
+  aiFeedback?: string;
 }
 
 // Reaction at sessions/{sessionId}/reactions/{uid}
@@ -72,6 +78,7 @@ export interface ActiveSessionState {
   note: string;
   beforeProofUrl: string | null;
   status: SessionStatus | null;
+  witnessId?: string;
 
   // Actions
   startSession: (
@@ -79,11 +86,18 @@ export interface ActiveSessionState {
     tag: SessionTag,
     note: string,
     username: string,
-    avatarUrl: string | null
+    avatarUrl: string | null,
+    witnessId?: string
   ) => Promise<string>;
   submitBeforeProof: (imageUri: string) => Promise<void>;
   endSession: () => Promise<void>;
   submitAfterProof: (imageUri: string) => Promise<void>;
   abandonSession: () => Promise<void>;
   clearSession: () => void;
+
+  // Witness Actions
+  witnessApprove: () => Promise<void>;
+  witnessReject: () => Promise<void>;
+  submitChallenge: (imageUri: string, note?: string) => Promise<void>;
+  handleWitnessTimeout: () => Promise<void>;
 }

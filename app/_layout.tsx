@@ -5,6 +5,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../src/hooks/useAuth';
+import { WitnessNotification } from '../src/components/witness/WitnessNotification';
 
 export default function RootLayout() {
   const { user, loading, profile } = useAuth();
@@ -41,6 +42,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <Slot />
+      <WitnessNotification />
     </SafeAreaProvider>
   );
 }

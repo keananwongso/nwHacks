@@ -87,12 +87,6 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="feed"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs >
   );
 }

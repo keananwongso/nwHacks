@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { doc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import { uploadProofImage } from '../services/storage';
-import { ActiveSessionState, SessionTag, SessionStatus } from '../types';
+import { ActiveSessionState, SessionTag, SessionStatus, Session } from '../types';
 
 // Generate a simple unique ID
 const generateId = () =>
@@ -15,6 +15,7 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
   durationMin: 0,
   tag: null,
   note: '',
+  witnessId: undefined, // Add to state
   beforeProofUrl: null,
   status: null,
 
@@ -23,7 +24,8 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
     tag: SessionTag,
     note: string,
     username: string,
-    avatarUrl: string | null
+    avatarUrl: string | null,
+    witnessId?: string // New param
   ) => {
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
@@ -45,6 +47,8 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
       beforeProofUrl: null,
       afterProofUrl: null,
       reactionCount: 0,
+      witnessId: witnessId || null,
+      witnessResponse: null,
     });
 
     set({
@@ -53,6 +57,7 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
       durationMin,
       tag,
       note,
+      witnessId, // Set in store
       beforeProofUrl: null,
       status: 'active',
     });
@@ -78,28 +83,88 @@ export const useSessionStore = create<ActiveSessionState>((set, get) => ({
     const { sessionId } = get();
     if (!sessionId) throw new Error('No active session');
 
-    // Timer ended, set status to completed so user appears "free" (blue dot)
+    // Just mark the end time. Status change happens after proof upload.
     await updateDoc(doc(db, 'sessions', sessionId), {
       endedAt: serverTimestamp(),
+      // Status remains active until proof is uploaded
+    });
+  },
+
+  // Witness Actions
+  witnessApprove: async () => {
+    const { sessionId } = get();
+    if (!sessionId) return;
+
+    await updateDoc(doc(db, 'sessions', sessionId), {
       status: 'completed' as SessionStatus,
+      witnessResponse: 'approved',
+    });
+    set({ status: 'completed' });
+  },
+
+  witnessReject: async () => {
+    const { sessionId } = get();
+    if (!sessionId) return;
+
+    await updateDoc(doc(db, 'sessions', sessionId), {
+      status: 'challenged' as SessionStatus,
+      witnessResponse: 'rejected',
+    });
+    set({ status: 'challenged' });
+  },
+
+  handleWitnessTimeout: async () => {
+    const { sessionId } = get();
+    if (!sessionId) return;
+
+    await updateDoc(doc(db, 'sessions', sessionId), {
+      status: 'completed' as SessionStatus,
+      witnessResponse: 'timeout',
+    });
+    set({ status: 'completed' });
+  },
+
+  submitChallenge: async (imageUri: string, note?: string) => {
+    const { sessionId } = get();
+    if (!sessionId) return;
+
+    const url = await uploadProofImage(imageUri, sessionId, 'challenge');
+
+    // Mock AI Verification for now
+    const mockConfidence = Math.floor(Math.random() * 20) + 80; // 80-100 score
+
+    await updateDoc(doc(db, 'sessions', sessionId), {
+      status: 'completed' as SessionStatus, // Or back to Active? No, complete it.
+      challengeProofUrl: url,
+      aiConfidence: mockConfidence,
+      aiFeedback: 'AI verification passed. Good job!',
     });
 
     set({ status: 'completed' });
   },
 
   submitAfterProof: async (imageUri: string) => {
-    const { sessionId } = get();
+    const { sessionId, witnessId } = get();
     const user = auth.currentUser;
     if (!sessionId || !user) throw new Error('No active session');
 
     const url = await uploadProofImage(imageUri, sessionId, 'after');
 
-    await updateDoc(doc(db, 'sessions', sessionId), {
-      afterProofUrl: url,
-      status: 'completed' as SessionStatus,
-    });
-
-    set({ status: 'completed' });
+    if (witnessId) {
+      // Now we wait for witness
+      await updateDoc(doc(db, 'sessions', sessionId), {
+        afterProofUrl: url,
+        status: 'awaiting_witness' as SessionStatus,
+      });
+      set({ status: 'awaiting_witness' });
+    } else {
+      // Complete immediately
+      await updateDoc(doc(db, 'sessions', sessionId), {
+        afterProofUrl: url,
+        status: 'completed' as SessionStatus,
+      });
+      set({ status: 'completed' });
+    }
   },
 
   abandonSession: async () => {

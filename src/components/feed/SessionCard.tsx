@@ -138,6 +138,7 @@ export function SessionCard({ session }: SessionCardProps) {
             )}
           </View>
           <Text style={styles.location}>Life Sciences Institute, UBC • {statusText}</Text>
+          {session.note ? <Text style={styles.headerNote}>{session.note}</Text> : null}
         </View>
         {isMyPost && (
           <TouchableOpacity
@@ -169,8 +170,6 @@ export function SessionCard({ session }: SessionCardProps) {
         )}
       </View>
 
-      {/* Note */}
-      {session.note ? <Text style={styles.note}>{session.note}</Text> : null}
 
       {/* Photos Carousel */}
       {photos.length > 0 ? (
@@ -427,11 +426,10 @@ const styles = StyleSheet.create({
   miniDecisionEmoji: {
     fontSize: 22,
   },
-  note: {
+  headerNote: {
     color: 'white',
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '400',
   },
 });

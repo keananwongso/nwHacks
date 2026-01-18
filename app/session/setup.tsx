@@ -45,12 +45,16 @@ export default function SetupScreen() {
 
     setStarting(true);
     try {
+      // Get selected witness if any (single select)
+      const witnessId = selectedBuddies.length > 0 ? selectedBuddies[0] : undefined;
+
       await startSession(
         duration,
         tag,
         '', // note removed from UI
         profile.username,
-        profile.avatarUrl
+        profile.avatarUrl,
+        witnessId
       );
 
       if (initialProofUri) {

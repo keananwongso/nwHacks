@@ -5,7 +5,7 @@ import { storage, auth } from './firebase';
 export async function uploadProofImage(
   localUri: string,
   sessionId: string,
-  type: 'before' | 'after'
+  type: 'before' | 'after' | 'challenge'
 ): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');

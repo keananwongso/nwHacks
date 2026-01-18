@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useSessionStore } from '../../src/stores/sessionStore';
 import { Timer } from '../../src/components/ui/Timer';
 import { PROOF_WINDOW_SECONDS, TAG_ICONS } from '../../src/utils/constants';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../src/services/firebase';
 
 export default function ActiveSessionScreen() {
   const router = useRouter();
@@ -16,6 +18,9 @@ export default function ActiveSessionScreen() {
     tag,
     beforeProofUrl,
     endSession,
+    status,
+    witnessId,
+    handleWitnessTimeout,
   } = useSessionStore();
 
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -49,8 +54,55 @@ export default function ActiveSessionScreen() {
 
   const handleEndSession = useCallback(async () => {
     await endSession();
+    // Navigate to camera for everyone (Witness flow now requires proof first)
     router.replace('/session/after-camera');
   }, [endSession, router]);
+
+  // Effect to handle status changes (e.g. witness approved/rejected)
+  useEffect(() => {
+    if (!sessionId) return;
+
+    // Subscribe to the session document for real-time status updates
+    // This is needed because the 'witness' might update the doc remotely
+    const unsubscribe = onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const remoteStatus = data.status;
+
+        // Update local store if different (optional, or just react locally)
+        // Ideally we update the store so other components know
+        if (remoteStatus !== status) {
+          useSessionStore.setState({ status: remoteStatus });
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [sessionId, status]);
+
+  // Witness Timeout Logic
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (status === 'awaiting_witness') {
+      timeoutId = setTimeout(() => {
+        handleWitnessTimeout();
+        // The store update status to 'completed' will trigger the existing navigation effect
+      }, 30000); // 30 seconds
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [status, handleWitnessTimeout]);
+
+  // React to status changes
+  useEffect(() => {
+    if (status === 'challenged') {
+      router.replace('/session/challenge');
+    } else if (status === 'completed' && witnessId) {
+      // Witness approved (or timed out)! We already took the photo, so go to feed
+      router.replace('/(tabs)');
+    }
+  }, [status, witnessId]);
 
 
   if (!sessionId) {
@@ -93,8 +145,14 @@ export default function ActiveSessionScreen() {
 
       {/* Bottom Actions */}
       <View style={styles.footer}>
-        <TouchableOpacity onPress={handleEndSession} style={styles.endButton}>
-          <Text style={styles.endButtonText}>End Session</Text>
+        <TouchableOpacity
+          onPress={handleEndSession}
+          style={[styles.endButton, status === 'awaiting_witness' && styles.endButtonDisabled]}
+          disabled={status === 'awaiting_witness'}
+        >
+          <Text style={styles.endButtonText}>
+            {status === 'awaiting_witness' ? 'Waiting for Witness... ⏳' : 'End Session'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -172,6 +230,10 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     alignItems: 'center',
     marginBottom: 12,
+  },
+  endButtonDisabled: {
+    backgroundColor: '#374151',
+    opacity: 0.8,
   },
   endButtonText: {
     color: 'white',
