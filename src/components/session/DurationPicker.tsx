@@ -1,78 +1,75 @@
-// Duration preset picker
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { DEMO_MODE } from '../../utils/constants';
+// Duration preset buttons
+import { Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
 interface DurationPickerProps {
-  presets: number[];
   selected: number;
   onSelect: (duration: number) => void;
 }
 
-export function DurationPicker({ presets, selected, onSelect }: DurationPickerProps) {
+const DURATION_OPTIONS = [
+  { value: 0, label: 'Untimed' },
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 45, label: '45 min' },
+  { value: 60, label: '60 min' },
+  { value: 90, label: '90 min' },
+  { value: 120, label: '120 min' },
+];
+
+export function DurationPicker({ selected, onSelect }: DurationPickerProps) {
   return (
-    <View style={styles.container}>
-      {presets.map((duration) => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
+      {DURATION_OPTIONS.map((option) => (
         <TouchableOpacity
-          key={duration}
-          onPress={() => onSelect(duration)}
+          key={option.value}
           style={[
             styles.button,
-            selected === duration && styles.buttonSelected,
+            selected === option.value && styles.buttonSelected,
           ]}
+          onPress={() => onSelect(option.value)}
         >
           <Text
             style={[
-              styles.number,
-              selected === duration && styles.numberSelected,
+              styles.buttonText,
+              selected === option.value && styles.buttonTextSelected,
             ]}
           >
-            {duration}
-          </Text>
-          <Text
-            style={[
-              styles.unit,
-              selected === duration && styles.unitSelected,
-            ]}
-          >
-            {DEMO_MODE ? 'min' : 'min'}
+            {option.label}
           </Text>
         </TouchableOpacity>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    flexWrap: 'wrap', // Allow wrapping if many options
-    gap: 8,
+    gap: 10,
+    paddingVertical: 4,
   },
   button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
     borderRadius: 99,
     backgroundColor: '#1F2937',
-    alignItems: 'center',
-    minWidth: 60,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
   buttonSelected: {
-    backgroundColor: '#374151', // Selected usually darker/lighter but design shows unselected is dark
-    borderWidth: 1,
-    borderColor: '#6366F1', // Or just highlight text. Design shows pills.
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
-  number: {
-    fontSize: 16,
-    fontWeight: '600',
+  buttonText: {
     color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  numberSelected: {
+  buttonTextSelected: {
     color: 'white',
-  },
-  unit: {
-    display: 'none', // Hide 'min' text inside the pill to match design "15", "30"...
-  },
-  unitSelected: {
-    display: 'none',
   },
 });

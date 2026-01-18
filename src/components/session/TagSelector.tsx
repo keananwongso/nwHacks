@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#9CA3AF',
-    fontSize: 16,
+    fontSize: 14,
   },
   labelSelected: {
     color: 'white',
