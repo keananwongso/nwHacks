@@ -20,8 +20,18 @@ export default function SessionLayout() {
         options={{
           title: 'Start a Lock-In',
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-              <Ionicons name="arrow-back" size={24} color="white" />
+            <TouchableOpacity onPress={() => router.back()} style={{
+              marginRight: 16,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: '#1F2937',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#374151'
+            }}>
+              <Ionicons name="arrow-back" size={20} color="white" />
             </TouchableOpacity>
           ),
         }}

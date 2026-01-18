@@ -10,7 +10,7 @@ export const DURATION_PRESETS = DEMO_MODE
 export const PROOF_WINDOW_SECONDS = DEMO_MODE ? 60 : 120; // 60s demo, 2min real
 
 // Tags for sessions
-export const SESSION_TAGS = ['Study', 'Gym', 'Build', 'Read', 'Other'] as const;
+export const SESSION_TAGS = ['Study', 'Gym', 'Build', 'Other'] as const;
 export type SessionTag = (typeof SESSION_TAGS)[number];
 
 // Reaction emojis
@@ -22,6 +22,5 @@ export const TAG_ICONS: Record<SessionTag, string> = {
   Study: '📚',
   Gym: '💪',
   Build: '🛠️',
-  Read: '📖',
   Other: '✨',
 };

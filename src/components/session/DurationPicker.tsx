@@ -45,32 +45,34 @@ export function DurationPicker({ presets, selected, onSelect }: DurationPickerPr
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap', // Allow wrapping if many options
+    gap: 8,
   },
   button: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 99,
     backgroundColor: '#1F2937',
     alignItems: 'center',
+    minWidth: 60,
   },
   buttonSelected: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#374151', // Selected usually darker/lighter but design shows unselected is dark
+    borderWidth: 1,
+    borderColor: '#6366F1', // Or just highlight text. Design shows pills.
   },
   number: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#9CA3AF',
   },
   numberSelected: {
     color: 'white',
   },
   unit: {
-    fontSize: 14,
-    color: '#6B7280',
+    display: 'none', // Hide 'min' text inside the pill to match design "15", "30"...
   },
   unitSelected: {
-    color: 'rgba(255,255,255,0.7)',
+    display: 'none',
   },
 });

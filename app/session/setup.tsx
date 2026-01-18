@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -22,6 +23,14 @@ import {
 import { DurationPicker } from '../../src/components/session/DurationPicker';
 import { TagSelector } from '../../src/components/session/TagSelector';
 
+const MOCK_FRIENDS = [
+  { id: '1', name: 'Alex', avatar: 'https://i.pravatar.cc/150?u=1' },
+  { id: '2', name: 'Sam', avatar: 'https://i.pravatar.cc/150?u=2' },
+  { id: '3', name: 'Jordan', avatar: 'https://i.pravatar.cc/150?u=3' },
+  { id: '4', name: 'Taylor', avatar: 'https://i.pravatar.cc/150?u=4' },
+  { id: '5', name: 'Casey', avatar: 'https://i.pravatar.cc/150?u=5' },
+];
+
 export default function SetupScreen() {
   const router = useRouter();
   const { initialProofUri } = useLocalSearchParams<{ initialProofUri: string }>();
@@ -32,7 +41,11 @@ export default function SetupScreen() {
   const [duration, setDuration] = useState(DURATION_PRESETS[0]);
   const [tag, setTag] = useState<SessionTag>('Study');
   const [note, setNote] = useState('');
+  const [mode, setMode] = useState<'solo' | 'buddy'>('solo');
+  const [selectedBuddy, setSelectedBuddy] = useState<string | null>(null);
+  const [isTimed, setIsTimed] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const handleStart = async () => {
     if (!profile) return;
@@ -62,26 +75,14 @@ export default function SetupScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Proof Preview if available */}
+        {/* Photo Section */}
         {initialProofUri && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📸 Ready to lock in!</Text>
-            <Image source={{ uri: initialProofUri }} style={styles.previewImage} />
+          <View style={styles.photoContainer}>
+            <TouchableOpacity onPress={() => setShowPreviewModal(true)} activeOpacity={0.9}>
+              <Image source={{ uri: initialProofUri }} style={styles.previewImage} />
+            </TouchableOpacity>
           </View>
         )}
-
-        {/* Duration Picker */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>How long are you locking in?</Text>
-          {DEMO_MODE && (
-            <Text style={styles.demoNote}>(Demo mode: durations in minutes)</Text>
-          )}
-          <DurationPicker
-            presets={DURATION_PRESETS}
-            selected={duration}
-            onSelect={setDuration}
-          />
-        </View>
 
         {/* Tag Selector */}
         <View style={styles.section}>
@@ -103,6 +104,79 @@ export default function SetupScreen() {
             textAlignVertical="top"
           />
         </View>
+
+        {/* Mode Selector */}
+        <View style={styles.section}>
+          <View style={styles.modeRow}>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'solo' && styles.modeButtonActive]}
+              onPress={() => setMode('solo')}
+            >
+              <Text style={[styles.modeButtonText, mode === 'solo' && styles.modeButtonTextActive]}>Solo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'buddy' && styles.modeButtonActive]}
+              onPress={() => setMode('buddy')}
+            >
+              <Text style={[styles.modeButtonText, mode === 'buddy' && styles.modeButtonTextActive]}>Buddy</Text>
+            </TouchableOpacity>
+          </View>
+          {mode === 'buddy' && (
+            <View style={{ marginTop: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.buddyList}>
+                {MOCK_FRIENDS.map((friend) => (
+                  <TouchableOpacity
+                    key={friend.id}
+                    style={styles.buddyItem}
+                    onPress={() => setSelectedBuddy(friend.id)}
+                  >
+                    <View style={[styles.buddyAvatarContainer, selectedBuddy === friend.id && styles.buddyAvatarSelected]}>
+                      <Image source={{ uri: friend.avatar }} style={styles.buddyAvatar} />
+                      {selectedBuddy === friend.id && (
+                        <View style={styles.checkmarkBadge}>
+                          <Ionicons name="checkmark" size={12} color="white" />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.buddyName, selectedBuddy === friend.id && styles.buddyNameSelected]}>{friend.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
+        {/* Duration Picker */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Duration</Text>
+          <View style={styles.durationRow}>
+            <TouchableOpacity
+              style={[styles.timeTypeButton, isTimed && styles.timeTypeButtonActive]}
+              onPress={() => setIsTimed(true)}
+            >
+              <Text style={[styles.timeTypeButtonTextUnselected, isTimed && styles.timeTypeButtonText]}>Timed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.timeTypeButton, !isTimed && styles.timeTypeButtonActive]}
+              onPress={() => setIsTimed(false)}
+            >
+              <Text style={[styles.timeTypeButtonTextUnselected, !isTimed && styles.timeTypeButtonText]}>Untimed</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isTimed ? (
+            <DurationPicker
+              presets={[15, 30, 45, 60, 90]}
+              selected={duration}
+              onSelect={setDuration}
+            />
+          ) : (
+            <Text style={{ color: '#9CA3AF' }}>Session will run until you stop it.</Text>
+          )}
+        </View>
+
+
+
       </ScrollView>
 
       {/* Start Button */}
@@ -117,7 +191,22 @@ export default function SetupScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+
+      {/* Full Screen Image Preview Modal */}
+      {
+        showPreviewModal && initialProofUri && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'black', zIndex: 100, justifyContent: 'center' }]}>
+            <Image source={{ uri: initialProofUri }} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
+            <TouchableOpacity
+              onPress={() => setShowPreviewModal(false)}
+              style={{ position: 'absolute', top: 60, left: 20, padding: 10 }}
+            >
+              <Ionicons name="close-circle" size={40} color="white" />
+            </TouchableOpacity>
+          </View>
+        )
+      }
+    </SafeAreaView >
   );
 }
 
@@ -130,7 +219,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 12, // Reduced from 24
+    paddingBottom: 24,
   },
   section: {
     marginBottom: 32,
@@ -173,11 +264,127 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  photoContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
   previewImage: {
     width: '100%',
     aspectRatio: 3 / 4,
     borderRadius: 16,
+    backgroundColor: '#374151',
+  },
+  photoActions: {
+    display: 'none',
+  },
+  minimalRetakeButton: {
+    display: 'none',
+  },
+  minimalRetakeText: {
+    display: 'none',
+  },
+  helperText: {
+    color: '#6B7280',
+    fontSize: 10,
+    marginTop: 4,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    backgroundColor: '#1F2937',
+    padding: 4,
+    borderRadius: 99,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  modeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 99,
+  },
+  modeButtonActive: {
+    backgroundColor: '#6366F1',
+  },
+  modeButtonText: {
+    color: '#9CA3AF',
+    fontWeight: '600',
+  },
+  modeButtonTextActive: {
+    color: 'white',
+    fontWeight: '600',
+  },
+
+  durationRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 12,
+  },
+  timeTypeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 99,
+    backgroundColor: '#374151',
+  },
+  timeTypeButtonActive: {
+    backgroundColor: '#6366F1',
+  },
+  timeTypeButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  timeTypeButtonTextUnselected: {
+    color: '#9CA3AF',
+    fontSize: 14,
+  },
+  subLabel: {
+    color: '#9CA3AF',
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  buddyList: {
+    flexDirection: 'row',
+  },
+  buddyItem: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  buddyAvatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 2, // Border selection gap
     marginBottom: 8,
-    backgroundColor: '#000',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  buddyAvatarSelected: {
+    borderColor: '#6366F1',
+  },
+  buddyAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#374151',
+  },
+  checkmarkBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#6366F1',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#111827',
+  },
+  buddyName: {
+    color: '#9CA3AF',
+    fontSize: 12,
+  },
+  buddyNameSelected: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
